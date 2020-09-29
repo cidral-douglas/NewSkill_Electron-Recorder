@@ -2,9 +2,14 @@ window.onload= ()=>{
     document.body.classList.remove('preload');
 }
 
-// Declarations
 
 document.addEventListener('DOMContentLoaded', ()=>{
+
+    const { ipcRenderer } = require('electron');
+
+    // Declarations
+
+    
     const display = document.querySelector("#display");
     const record = document.querySelector("#record");
     const micInput = document.querySelector("#mic");
@@ -49,7 +54,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
     record.addEventListener("click", ()=>{
         updateButtonTo(!isRecording);
-        handleRecord();
+        handleRecord(isRecording);
 
         isRecording = !isRecording;
     });
@@ -77,7 +82,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
     function saveData(){
         const blob = new Blob(chunks, {"type": "audio/webm; codecs=opus"});
+        console.log(blob)
         
+        blob.arrayBuffer().then(blobBuffer=>{
+            const buffer = new Buffer(blobBuffer, "binary");
+            ipcRenderer.send("save_buffer", buffer);
+        })
         chunks = [];
     };
 

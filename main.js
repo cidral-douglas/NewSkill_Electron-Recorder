@@ -1,8 +1,31 @@
-const { app, BrowserWindow, ipcMain, Menu, globalShortcut } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, globalShortcut, shell } = require('electron');
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
+const { create } = require('domain');
+let destination = path.join(os.homedir(), 'audios');
 
 const isDev = process.env.NODE_ENV !== undefined && process.env.NODE_ENV === "development" ?true : false;
+
+function createPreferenceWindow(){
+    const preferenceWindow = new BrowserWindow({
+        width: isDev? 950 : 500,
+        resizable: isDev?true:false,
+        height: 150,
+        backgroundColor: "#234",
+        show: false,
+        icon: path.join(__dirname, "assets", "icons", "icon.png"),
+        webPreferences: {
+            nodeIntegration: true,
+        },
+    });
+
+    preferenceWindow.loadFile("./src/preferences/index.html");
+
+    preferenceWindow.once("ready-to-show", ()=>{
+        preferenceWindow.show();
+    });
+}
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -30,8 +53,8 @@ function createWindow() {
     const menuTemplate = [
         {label: app.name,
         submenu: [
-            {label: 'Preferences', click:()=>{}},
-            {label: 'Open destination folder', click:()=>{}}
+            {label: 'Preferences', click:()=>{ createPreferenceWindow() }},
+            {label: 'Open destination folder', click:()=>{ shell.openPath(destination) } }
         ]},
         {label: 'File',
             submenu: [
@@ -48,6 +71,21 @@ app.whenReady().then(()=>{
 
 app.on('will-quit', ()=>{
     globalShortcut.unregisterAll();
+});
+
+app.on("activate", ()=>{
+    if(BrowserWindow.getAllWindows().length === 0){
+        createWindow();
+    }
+});
+
+ipcMain.on("open_new_window", ()=>{
+    createWindow();
+});
+
+ipcMain.on("save_buffer", (e, buffer)=>{
+    const filePath = path.join(destination, `${Date.now()}` );
+    fs.writeFileSync(`${filePath}.webm`, buffer);
 });
 
 
