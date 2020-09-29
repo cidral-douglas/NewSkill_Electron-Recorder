@@ -11,12 +11,13 @@ function createWindow() {
         height: 300,
         backgroundColor: "#234",
         show: false,
+        icon: path.join(__dirname, "assets", "icons", "icon.png"),
         webPreferences: {
             nodeIntegration: true,
         },
     });
 
-    win.loadFile("./src/index.html");
+    win.loadFile("./src/mainWindow/index.html");
     if(isDev) { win.webContents.openDevTools();}
 
     win.once("ready-to-show", ()=>{
