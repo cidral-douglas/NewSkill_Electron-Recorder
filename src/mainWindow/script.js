@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
     let isRecording = false;
     let selectedDeviceId = null;
+    let mediaRecorder = null;
+    let startTime = null;
+    let chunks = [];
 
     // Get available devices
 
@@ -42,6 +45,60 @@ document.addEventListener('DOMContentLoaded', ()=>{
             document.querySelector("#record").classList.remove("recording");
             document.querySelector("#mic-icon").classList.remove("hide");
         }
+    };
+
+    record.addEventListener("click", ()=>{
+        updateButtonTo(!isRecording);
+        handleRecord();
+
+        isRecording = !isRecording;
+    });
+
+    function handleRecord(recording) {
+        if(recording) {
+            //stop
+            mediaRecorder.stop();
+        } else{
+            //start
+            navigator.mediaDevices.getUserMedia({audio:{deviceId: selectedDeviceId}, video: false}).then(stream=>{
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.start();
+                startTime = Date.now();
+                updateDisplay();
+                mediaRecorder.ondataavailable = (event)=>{
+                    chunks.push(event.data);
+                };
+                mediaRecorder.onstop = (event)=>{
+                    saveData();
+                };
+            })
+        }
+    }
+
+    function saveData(){
+        const blob = new Blob(chunks, {"type": "audio/webm; codecs=opus"});
+        
+        chunks = [];
+    };
+
+    function updateDisplay(){
+        display.innerHTML = durationToTimestamp(Date.now() - startTime);
+        if(isRecording) {
+            window.requestAnimationFrame(updateDisplay);
+        }           
+    };
+
+    function durationToTimestamp(duration){
+        let mili = parseInt((duration % 1000) / 100);
+        let seconds = Math.floor((duration/1000) % 60);
+        let minutes = Math.floor((duration/1000/60) % 60);
+        let hours = Math.floor((duration/1000/60/60));
+
+        seconds = seconds < 10 ? "0" + seconds: seconds;
+        minutes = minutes < 10 ? "0" + minutes: minutes;
+        hours = hours < 10 ? "0" + hours: hours;
+
+        return `${hours}:${minutes}:${seconds}:${mili}`
     }
 
 })
