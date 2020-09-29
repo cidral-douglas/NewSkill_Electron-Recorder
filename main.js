@@ -1,8 +1,9 @@
-const { app, BrowserWindow, ipcMain, Menu, globalShortcut, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, globalShortcut, shell, dialog } = require('electron');
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
 const { create } = require('domain');
+const { dir } = require('console');
 let destination = path.join(os.homedir(), 'audios');
 
 const isDev = process.env.NODE_ENV !== undefined && process.env.NODE_ENV === "development" ?true : false;
@@ -24,6 +25,7 @@ function createPreferenceWindow(){
 
     preferenceWindow.once("ready-to-show", ()=>{
         preferenceWindow.show();
+        preferenceWindow.webContents.send("dest-path-update", destination);
     });
 }
 
@@ -86,6 +88,15 @@ ipcMain.on("open_new_window", ()=>{
 ipcMain.on("save_buffer", (e, buffer)=>{
     const filePath = path.join(destination, `${Date.now()}` );
     fs.writeFileSync(`${filePath}.webm`, buffer);
+});
+
+ipcMain.handle('show-dialog', async (event)=>{
+    const result = await dialog.showOpenDialog({properties:['openDirectory'] });
+    const dirPath = result.filePaths[0];
+
+    destination = dirPath;
+
+    return destination;
 });
 
 
